@@ -1,0 +1,44 @@
+name: Release builds
+
+# Když na GitHubu vydáš release, sestaví se aplikace pro všechny systémy a zipy se k němu přiloží.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: ubuntu-latest
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: osx-arm64
+            os: macos-latest
+          - rid: osx-x64
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Publish
+        run: dotnet publish src/DailyHryTracker -c Release -r ${{ matrix.rid }} --self-contained true -o out/DailyHryTracker
+      - name: Zip
+        run: cd out && zip -qr ../DailyHryTracker-${{ matrix.rid }}.zip DailyHryTracker
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DailyHryTracker-${{ matrix.rid }}
+          path: DailyHryTracker-${{ matrix.rid }}.zip
+      - name: Upload to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" DailyHryTracker-${{ matrix.rid }}.zip --clobber

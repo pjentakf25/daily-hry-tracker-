@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <RollForward>Major</RollForward>
+        <Nullable>disable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <RootNamespace>DailyHryTracker</RootNamespace>
+        <AssemblyName>DailyHryTracker</AssemblyName>
+        <PublishReadyToRun>false</PublishReadyToRun>
+        <TieredCompilation>false</TieredCompilation>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <ApplicationIcon>Icon.ico</ApplicationIcon>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Remove="Icon.ico" />
+        <None Remove="Icon.bmp" />
+        <EmbeddedResource Include="Icon.ico" LogicalName="Icon.ico" />
+        <EmbeddedResource Include="Icon.bmp" LogicalName="Icon.bmp" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />
+        <PackageReference Include="FontStashSharp.MonoGame" Version="1.3.*" />
+    </ItemGroup>
+</Project>
