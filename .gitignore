@@ -1,0 +1,27 @@
+# Build output
+bin/
+obj/
+out/
+publish/
+artifacts/
+
+# IDE
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+
+# MonoGame content pipeline
+Content/bin/
+Content/obj/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+packages/
