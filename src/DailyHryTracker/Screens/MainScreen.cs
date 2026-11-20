@@ -110,7 +110,7 @@ public class MainScreen : Screen
         StatLine(st, ref y, "Ocenění", $"{T.P.Awards.Count} / {Awards.All.Count}");
 
         Ui.Text("Dnešní hry", c.X, heat.Bottom + 14, 18, Theme.Text, true);
-        Ui.Text("odškrtni i to, co jsi hrál jinde", c.X + 110, heat.Bottom + 17, 14, Theme.TextDim);
+        Ui.Text("„Hrát dnešní“ otevře originální web přímo v aplikaci, křížek vpravo nahoře ho zavře a odškrtne", c.X + 110, heat.Bottom + 17, 14, Theme.TextDim);
         int gy = heat.Bottom + 44;
         const int cols = 3, gap = 14;
         int cw = (c.Width - (cols - 1) * gap) / cols, ch = 140;
@@ -146,12 +146,12 @@ public class MainScreen : Screen
             if (result != null) TrackerApp.I.Notify("Hra dohraná v aplikaci se nedá odškrtnout zpět");
             else T.ToggleManual(g.Id, Tracker.Today);
         }
-        if (Ui.Hover(cb)) Ui.Tooltip = result != null ? "Dohráno v aplikaci" : done ? "Odškrtnuto ručně – klikni pro zrušení" : "Odškrtnout ručně (hrál jsem jinde)";
+        if (Ui.Hover(cb)) Ui.Tooltip = result != null ? "Dohráno v aplikaci" : done ? "Odškrtnuto – klikni pro zrušení" : "Odškrtnout dnešní hru";
 
         var stats = T.StatsFor(g.Id);
         string status = result != null
             ? (result.Won ? "Výhra" : "Prohra") + " · " + ShortSummary(g.Id, result)
-            : manual ? "Odškrtnuto ručně" : "Dnes ještě nehráno";
+            : manual ? "Dnes odškrtnuto" : WebGames.IsOpen(g.Id) ? "Hra je otevřená v okně…" : "Dnes ještě nehráno";
         Ui.Text(Ui.Ellipsize(status, r.Width - 40, 15), r.X + 20, r.Y + 66, 15, done ? Theme.Text : Theme.TextDim, result != null);
         if (stats.CurrentStreak > 0)
         {
@@ -162,11 +162,16 @@ public class MainScreen : Screen
         int bw = (r.Width - 40 - 10) / 2;
         var b1 = new Rectangle(r.X + 20, r.Bottom - 48, bw, 36);
         var b2 = new Rectangle(b1.Right + 10, b1.Y, bw, 36);
-        if (Ui.Button(b1, result != null ? "Dnes dohráno" : "Denní", g.Color, Theme.Bg, 16, result == null))
-            TrackerApp.I.Open(new GameScreen(g, true));
+        bool open = WebGames.IsOpen(g.Id);
+        if (Ui.Button(b1, open ? "Otevřeno…" : done ? "Hrát znovu" : "Hrát dnešní", g.Color, Theme.Bg, 16, !open))
+        {
+            if (EmbeddedWeb.Supported) TrackerApp.I.Open(new WebGameScreen(g));
+            else if (!WebGames.Open(g)) TrackerApp.I.Notify(WebGames.LastError); // Linux: samostatné okno
+        }
+        if (Ui.Hover(b1)) Ui.Tooltip = $"Otevře originální {g.Name} přímo v aplikaci ({new Uri(g.Url).Host})";
         if (Ui.Button(b2, "Nekonečná", Theme.Panel2, Theme.Text, 16))
             TrackerApp.I.Open(new GameScreen(g, false));
-        if (g.NeedsNetwork && Ui.Hover(b1)) Ui.Tooltip = "Vyžaduje připojení k internetu";
+        if (Ui.Hover(b2)) Ui.Tooltip = "Nekonečná verze přímo v aplikaci – nová hra pokaždé";
     }
 
     public static string ShortSummary(string gameId, DailyResult r) => gameId switch
@@ -308,9 +313,9 @@ public class MainScreen : Screen
             FriendSync.Reveal(FriendSync.FriendsFolder);
         }
         y += 60;
-        Ui.TextWrapped("Denní hry jsou pro všechny stejné (odvozené od data), takže s kamarády hrajete totéž. " +
-                       "Nekonečné verze generují náhodné kolo pokaždé znovu. Globle/Worldle si poprvé stáhnou obrysy zemí " +
-                       "(Natural Earth, public domain), WikiRace čte anglickou Wikipedii – zbytek funguje offline.",
+        Ui.TextWrapped("Denní hry se otevírají jako originální weby přímo v okně aplikace (vestavěný prohlížeč, ne Safari ani Chrome). " +
+                       "Křížek vpravo nahoře web zavře a hru odškrtne. Přihlášení a statistiky webů zůstávají uložené. " +
+                       "Nekonečné verze běží přímo v aplikaci; Globle/Worldle si poprvé stáhnou obrysy zemí, WikiRace čte anglickou Wikipedii.",
             new Rectangle(x, y, p.Width - 48, 100), 15, Theme.TextDim);
         Ui.Text($"Profil ID: {T.P.Id} · vytvořen {T.P.Created:d. M. yyyy}", x, p.Bottom - 30, 13, Theme.TextDim);
     }
