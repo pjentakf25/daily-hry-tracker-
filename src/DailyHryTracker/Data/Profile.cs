@@ -68,6 +68,9 @@ public static class SaveStore
     {
         get
         {
+            // testovací režim: DHT_DATA=<složka> použije oddělená data
+            var test = Environment.GetEnvironmentVariable("DHT_DATA");
+            if (!string.IsNullOrEmpty(test)) return test;
             var root = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             if (string.IsNullOrEmpty(root)) root = AppContext.BaseDirectory;
             return Path.Combine(root, "DailyHryTracker");

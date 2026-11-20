@@ -20,7 +20,15 @@
         <EmbeddedResource Include="Icon.bmp" LogicalName="Icon.bmp" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4191.47" />
         <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />
         <PackageReference Include="FontStashSharp.MonoGame" Version="1.3.*" />
+        <PackageReference Include="Photino.NET" Version="4.0.16" />
     </ItemGroup>
+    <!-- Z WebView2 potřebujeme jen Core (WinForms/WPF ovládací prvky nepoužíváme) -->
+    <Target Name="DropWebView2UiReferences" BeforeTargets="ResolveAssemblyReferences">
+        <ItemGroup>
+            <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf' Or '%(Filename)' == 'Microsoft.Web.WebView2.WinForms'" />
+        </ItemGroup>
+    </Target>
 </Project>
