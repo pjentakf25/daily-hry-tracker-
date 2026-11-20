@@ -16,6 +16,22 @@ public class TrackerApp : Game
     public static TrackerApp I { get; private set; }
     public Tracker Tracker { get; private set; }
 
+    EmbeddedWeb _web;
+    bool _webTried;
+    /// <summary>Prohlížeč vložený do okna aplikace (vytvoří se při prvním použití), null když systém neumí.</summary>
+    public EmbeddedWeb Web
+    {
+        get
+        {
+            if (!_webTried)
+            {
+                _webTried = true;
+                _web = EmbeddedWeb.Create(Window);
+            }
+            return _web;
+        }
+    }
+
     readonly GraphicsDeviceManager _graphics;
     Screen _screen;
     MainScreen _main;
@@ -72,6 +88,9 @@ public class TrackerApp : Game
             _screen = new GameScreen(Games.GameCatalog.Get(parts[0]), parts.Length < 2 || parts[1] != "endless");
         }
         else if (shotScreen.Length > 0) _main.SelectTab(shotScreen);
+        // testovací režim: DHT_OPEN_WEB=<id> rovnou otevře web hry
+        var openWeb = Environment.GetEnvironmentVariable("DHT_OPEN_WEB");
+        if (!string.IsNullOrEmpty(openWeb)) _screen = new WebGameScreen(Games.GameCatalog.Get(openWeb));
     }
 
     // --- testovací režim: DHT_SHOT=cesta.png vyrenderuje obrazovku do souboru a ukončí aplikaci ---
@@ -100,6 +119,7 @@ public class TrackerApp : Game
     {
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Ui.BeginFrame(dt);
+        _web?.Pump();
         GraphicsDevice.Clear(Theme.Bg);
         Ui.Begin();
 
@@ -113,7 +133,14 @@ public class TrackerApp : Game
             Ui.Begin();
         }
 
+        if (_askGame == null) _askGame = WebGames.PollClosed();
+        if (_askGame != null) Ui.ClickConsumed = true; // pod dotazem se nic neklikne
         _screen.Frame(dt);
+        if (_askGame != null)
+        {
+            Ui.ClickConsumed = false;
+            DrawAskDone();
+        }
         DrawAwardPopup(dt);
         DrawNotice(dt);
         Ui.DrawTooltip();
@@ -148,6 +175,36 @@ public class TrackerApp : Game
         if (_awardTime <= 0) _awardShown = null;
     }
 
+    // --- po zavření okna s webem hry se zeptáme, jestli ji hráč dohrál ---
+    Games.GameInfo _askGame;
+
+    void DrawAskDone()
+    {
+        var g = _askGame;
+        bool already = Tracker.IsDone(g.Id, Tracker.Today);
+        if (already)
+        {
+            _askGame = null;
+            return;
+        }
+        Ui.Rect(new Rectangle(0, 0, Ui.Width, Ui.Height), Color.Black * 0.55f);
+        var r = new Rectangle(Ui.Width / 2 - 260, Ui.Height / 2 - 110, 520, 220);
+        Ui.Panel(r);
+        Ui.Border(r, g.Color, 2);
+        Ui.TextCentered($"Dohrál jsi dnešní {g.Name}?", new Rectangle(r.X, r.Y + 30, r.Width, 36), 26, Theme.Text, true);
+        Ui.TextCentered("Okno hry se zavřelo. Mám hru dnes odškrtnout?", new Rectangle(r.X, r.Y + 74, r.Width, 26), 16, Theme.TextDim);
+        var yes = new Rectangle(r.X + 40, r.Bottom - 76, 210, 48);
+        var no = new Rectangle(r.Right - 250, r.Bottom - 76, 210, 48);
+        if (Ui.Button(yes, "Ano, odškrtnout", g.Color, Theme.Bg, 18) || Ui.KeyPressed(Keys.Enter))
+        {
+            Tracker.ToggleManual(g.Id, Tracker.Today);
+            Notify($"{g.Name} odškrtnuto");
+            _askGame = null;
+        }
+        else if (Ui.Button(no, "Ještě ne", Theme.Panel2, Theme.Text, 18) || Ui.KeyPressed(Keys.Escape))
+            _askGame = null;
+    }
+
     void DrawNotice(float dt)
     {
         if (_noticeTime <= 0 || string.IsNullOrEmpty(_notice)) return;
@@ -172,6 +229,8 @@ public class TrackerApp : Game
     protected override void OnExiting(object sender, ExitingEventArgs args)
     {
         Tracker?.Save();
+        WebGames.CloseAll();
+        _web?.Close();
         base.OnExiting(sender, args);
     }
 }
