@@ -30,7 +30,8 @@ public static class Ui
     static readonly List<char> _pendingChars = new();
     public static int Wheel;
     public static Point MousePos => Mouse.Position;
-    public static bool LeftPressed => Mouse.LeftButton == ButtonState.Pressed && PrevMouse.LeftButton == ButtonState.Released;
+    /// <summary>Levé tlačítko bylo v tomhle snímku stisknuto (včetně rychlých ťuknutí, viz <see cref="Sdl.WatchClicks"/>).</summary>
+    public static bool LeftPressed { get; private set; }
     public static bool RightPressed => Mouse.RightButton == ButtonState.Pressed && PrevMouse.RightButton == ButtonState.Released;
     /// <summary>Když už klik "spotřeboval" nějaký prvek (např. modální okno), další prvky ho nedostanou.</summary>
     public static bool ClickConsumed;
@@ -47,6 +48,7 @@ public static class Ui
     {
         Gd = gd;
         Sb = new SpriteBatch(gd);
+        try { Sdl.WatchClicks(); } catch { /* bez SDL událostí zůstává obyčejné snímání myši */ }
         _pixel = new Texture2D(gd, 1, 1);
         _pixel.SetData(new[] { Color.White });
 
@@ -120,6 +122,8 @@ public static class Ui
         PrevKb = Kb;
         Mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
         Kb = Keyboard.GetState();
+        bool sdlDown = Sdl.TakeLeftDown();
+        LeftPressed = sdlDown || (Mouse.LeftButton == ButtonState.Pressed && PrevMouse.LeftButton == ButtonState.Released);
         Wheel = (Mouse.ScrollWheelValue - PrevMouse.ScrollWheelValue) / 120;
         if (Wheel == 0 && Mouse.ScrollWheelValue != PrevMouse.ScrollWheelValue)
             Wheel = Math.Sign(Mouse.ScrollWheelValue - PrevMouse.ScrollWheelValue);
