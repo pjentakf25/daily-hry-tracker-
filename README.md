@@ -1,25 +1,27 @@
 # Daily Hry Tracker
 
-Desktopová aplikace v C# / MonoGame, která sleduje, jak hraješ denní hry. Všech 9 her běží přímo v aplikaci, žádné odkazy do prohlížeče:
+Desktopová aplikace v C# / MonoGame, která sleduje, jak hraješ denní hry.
 
-| Hra | Popis |
+**Denní hra** se otevře jako originální web přímo v okně aplikace: nahoře zůstane lišta aplikace a pod ní je vestavěný prohlížeč (WebKit na macOS, WebView2 na Windows). Nic se neotevírá v Safari ani v Chromu a nevzniká žádné další okno. **Křížek vpravo nahoře** web zavře a hru dnes odškrtne, tlačítko **← Přehled** ho zavře bez odškrtnutí. Přihlášení, cookies a statistiky webů zůstávají uložené mezi spuštěními.
+
+| Hra | Web |
 |---|---|
-| Wordle | anglické slovo o 5 písmenech, 6 pokusů |
-| Connections | 16 slov → 4 skupiny, max. 4 chyby |
-| Krillion | 7 otázek × 25 s, vzácné odpovědi = víc bodů |
-| Noillirk | Krillion naruby, nejvíc bodů má nejčastější odpověď |
-| Globle | hledání země podle vzdálenosti (tepelná mapa) |
-| Worldle | poznávání země podle siluety (vzdálenost, směr, %) |
-| Spotle Movies | hádání filmu podle roku, žánru, režiséra, země, délky a hodnocení |
-| Poople | slovní žebřík ke slovu POOP |
-| WikiRace | proklikávání anglickou Wikipedií z článku A do článku B |
+| Wordle | nytimes.com/games/wordle |
+| Connections | nytimes.com/games/connections |
+| Krillion | krillion.io |
+| Noillirk | noillirk.com |
+| Globle | globle-game.com |
+| Worldle | worldle.teuteuf.fr |
+| Spotle Movies | spotle.movie |
+| Poople | poople.io |
+| WikiRace | thewikigame.com |
 
-Každá hra má **denní** verzi (pro všechny stejná, odvozená od data) a **nekonečnou** verzi s náhodnými koly.
+Každá hra má navíc **nekonečnou** verzi, která běží přímo v aplikaci a generuje pokaždé nové kolo.
 
 ## Funkce
 
 - **Heatmapa aktivity** jako na GitHubu (poslední rok, intenzita = počet dohraných her za den)
-- **Odškrtávání**: hry dohrané v aplikaci se odškrtnou samy, ručně si můžeš odškrtnout i hru, kterou jsi hrál jinde
+- **Odškrtávání**: křížek v liště nad webem hru zavře a odškrtne; jde to i ručně zaškrtávátkem na kartě
 - **Série**: celková série i série pro každou hru zvlášť
 - **Ocenění** (38): série 3–365 dní, perfektní dny a týdny, počty her, mistrovské výkony v jednotlivých hrách, přátelé
 - **Statistiky**: úspěšnost, průměrné a nejlepší skóre, nekonečné hry, graf za posledních 30 dní
@@ -42,22 +44,23 @@ Potřebuješ .NET 9 SDK.
 dotnet run --project src/DailyHryTracker
 ```
 
-Data se ukládají do `~/.config/DailyHryTracker` (macOS/Linux) nebo `%APPDATA%\DailyHryTracker` (Windows).
+Data se ukládají do `~/Library/Application Support/DailyHryTracker` (macOS), `~/.config/DailyHryTracker` (Linux) nebo `%APPDATA%\DailyHryTracker` (Windows). Data vestavěného prohlížeče jsou na Windows v podsložce `Web`, na macOS je spravuje systémový WebKit.
 
-## Síť
+## Síť a požadavky
 
-- **Globle/Worldle** si při prvním spuštění stáhnou obrysy zemí ([Natural Earth](https://www.naturalearthdata.com/), public domain, ~800 kB) a uloží si je. Bez internetu hrají v náhradním režimu (středy zemí, nápovědy).
-- **WikiRace** potřebuje internet (MediaWiki API).
-- Ostatní hry fungují úplně offline.
+- **Denní hry** jsou weby, takže potřebují internet.
+- Windows 10/11 mají WebView2 v systému, macOS používá systémový WebKit.
+- Na **Linuxu** se web do okna vložit neumí, otevře se v samostatném okně aplikace (potřebuje WebKitGTK, `libwebkit2gtk-4.1`) a po jeho zavření se aplikace zeptá, jestli hru odškrtnout.
+- **Nekonečné verze**: Globle/Worldle si poprvé stáhnou obrysy zemí ([Natural Earth](https://www.naturalearthdata.com/), public domain) a uloží si je. WikiRace čte anglickou Wikipedii. Ostatní fungují offline.
 
 ## Struktura
 
 ```
 DailyHryTracker.sln
 src/DailyHryTracker/
-  Core/      UI vrstva (kreslení, text, tlačítka, textová pole, našeptávač)
+  Core/      UI vrstva (kreslení, text, tlačítka, textová pole, našeptávač), EmbeddedWeb = web vložený do okna, WebGames = samostatné okno pro Linux
   Data/      profil, ukládání, série, ocenění, přátelé
-  Games/     jednotlivé mini-hry + Data/ (slovníky, země, filmy, otázky)
+  Games/     katalog her s adresami webů, nekonečné mini-hry + Data/ (slovníky, země, filmy, otázky)
   Screens/   přehled, statistiky, ocenění, přátelé, nastavení, herní obrazovka
 ```
 
