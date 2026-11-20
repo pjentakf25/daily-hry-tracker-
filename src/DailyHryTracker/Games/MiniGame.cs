@@ -12,6 +12,8 @@ public class GameInfo
     public string Help;
     public Color Color;
     public bool NeedsNetwork;
+    /// <summary>Originální web denní hry – otevírá se v okně aplikace.</summary>
+    public string Url;
     public Func<MiniGame> Create;
 }
 
